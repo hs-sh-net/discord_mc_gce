@@ -2,6 +2,7 @@ import configparser
 import subprocess
 import re
 import discord
+import datetime
 from mcrcon import MCRcon
 
 class Config:
@@ -64,7 +65,12 @@ class Discord:
     def __init__(self):
         conf = Config()
         self.token = conf.load("Discord", "Token")
+        self.interval = conf.load("Discord", "Interval", default="5")
+
+        self.interval = int(self.interval)
+        self.last = datetime.datetime.fromtimestamp(0)
         self.client = discord.Client()
+
 
     def start(self):
         @self.client.event
@@ -75,6 +81,15 @@ class Discord:
         async def on_message(message):
             if message.author == self.client.user:
                 return
+
+            now = datetime.datetime.now()
+            if message.content.startswith('/mc'):
+                print(now, now - self.last, message.author, message.content)
+
+                if now - self.last < datetime.timedelta(minutes=self.interval):
+                    return
+
+                self.last = now
 
             if message.content.startswith('/mc start'):
                 server = Server()
