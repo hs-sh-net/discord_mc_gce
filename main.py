@@ -3,6 +3,7 @@ import subprocess
 import re
 import discord
 import datetime
+import schedule
 from mcrcon import MCRcon
 
 
@@ -33,11 +34,17 @@ class Server:
         self.host = conf.load("Minecraft", "host", default="localhost")
         self.password = conf.load("Minecraft", "password", default="password")
         self.port = conf.load("Minecraft", "port", default="25575")
+        self.interval = conf.load("Minecraft", "interval", default="5")
+        self.inactive_count = conf.load("Minecraft", "count", default="2")
         self.gce_zone = conf.load("GCE", "gce_zone", default="asia-northeast1-b")
         self.gce_name = conf.load("GCE", "gce_name", default="minecraft")
         self.gcloud = conf.load("GCE", "gcloud", default="/snap/bin/gcloud")
+        self.inactive = 0
+        self.is_polling = 0
 
         self.port = int(self.port)
+        self.interval = int(self.interval)
+        self.inactive_count = int(self.inactive_count)
 
     def start(self):
         subprocess.run([self.gcloud, "compute", "instances", "start", "--zone", self.gce_zone, self.gce_name])
@@ -53,6 +60,17 @@ class Server:
         count = int(res.group(0))
         return count
 
+    def poll(self):
+        count = self.count()
+        print(datetime.datetime.now(), "Player:", count)
+        if count == 0:
+            self.inactive = self.inactive + 1
+            if self.inactive > self.inactive_count:
+                self.stop()
+                print(datetime.datetime.now(), "Stopped")
+        else:
+            self.inactive = 0
+
     def rcon(self, command):
         try:
             with MCRcon(self.host, self.password, self.port) as mcr:
@@ -60,7 +78,6 @@ class Server:
         except ConnectionRefusedError:
             print("Minecraft: ConnectionRefusedError")
             return ""
-
 
 class Discord:
     def __init__(self):
@@ -123,6 +140,10 @@ class Discord:
 
 
 def main():
+    server = Server()
+    server.poll()
+    schedule.every(server.interval).minutes.do(server.poll)
+
     ds = Discord()
     ds.start()
 
