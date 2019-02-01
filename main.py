@@ -40,14 +40,23 @@ class Server:
         subprocess.run([self.gcloud, "compute", "instances", "start", "--zone", self.gce_zone, self.gce_name])
 
     def stop(self):
-        with MCRcon(self.host, self.password, self.port) as mcr:
-            print(mcr.command("/stop"))
+        self.rcon("/stop")
 
     def count(self):
-        with MCRcon(self.host, self.password, self.port) as mcr:
-            res = mcr.command("/list")
-            count = int(re.search("([0-9]+)", res).group(0))
-            return(count)
+        res = self.rcon("/list")
+        res = re.search("([0-9]+)", res)
+        if res is None:
+            return -1
+        count = int(res.group(0))
+        return(count)
+
+    def rcon(self, command):
+        try:
+            with MCRcon(self.host, self.password, self.port) as mcr:
+                return mcr.command(command)
+        except ConnectionRefusedError:
+            print("Minecraft: ConnectionRefusedError")
+            return ""
 
 def main():
     server = Server()
