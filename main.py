@@ -1,6 +1,7 @@
 import configparser
 import subprocess
 import re
+import discord
 from mcrcon import MCRcon
 
 class Config:
@@ -58,8 +59,56 @@ class Server:
             print("Minecraft: ConnectionRefusedError")
             return ""
 
+
+class Discord:
+    def __init__(self):
+        conf = Config()
+        self.token = conf.load("Discord", "Token")
+        self.client = discord.Client()
+
+    def start(self):
+        @self.client.event
+        async def on_ready():
+            print('We have logged in as {0.user}'.format(self.client))
+
+        @self.client.event
+        async def on_message(message):
+            if message.author == self.client.user:
+                return
+
+            if message.content.startswith('/mc start'):
+                server = Server()
+                if server.count() == -1:
+                    server.start()
+                    msg = "サーバーを起動します"
+                else:
+                     msg = "サーバーは起動しています"
+                await self.client.send_message(message.channel, msg)
+
+            elif message.content.startswith('/mc stop'):
+                server = Server()
+                cnt = server.count()
+
+                if cnt == 0:
+                    server.stop()
+                    msg = "サーバーを停止します"
+                elif cnt == -1:
+                    msg = "サーバーは停止しています"
+                else:
+                    msg = "まだ人がいます"
+
+                await self.client.send_message(message.channel, msg)
+
+            elif message.content.startswith('/mc count'):
+                server = Server()
+                msg = server.count()
+                await self.client.send_message(message.channel, msg)
+
+        self.client.run(self.token)
+
+
 def main():
-    server = Server()
-    print(server.count(), "人います")
+    ds = Discord()
+    ds.start()
 
 main()
