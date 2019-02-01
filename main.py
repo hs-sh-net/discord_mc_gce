@@ -5,6 +5,7 @@ import discord
 import datetime
 from mcrcon import MCRcon
 
+
 class Config:
     file = "config.ini"
 
@@ -13,11 +14,11 @@ class Config:
 
         config.read(self.file)
 
-        if not section in config:
+        if section not in config:
             config[section] = {}
             print("Config: [", section, "]")
 
-        if not key in config[section]:
+        if key not in config[section]:
             config[section][key] = default
             print("Config: [", section, "][", key, "] : ", default)
             with open(self.file, 'w') as configfile:
@@ -50,7 +51,7 @@ class Server:
         if res is None:
             return -1
         count = int(res.group(0))
-        return(count)
+        return count
 
     def rcon(self, command):
         try:
@@ -70,7 +71,6 @@ class Discord:
         self.interval = int(self.interval)
         self.last = datetime.datetime.fromtimestamp(0)
         self.client = discord.Client()
-
 
     def start(self):
         @self.client.event
@@ -97,7 +97,7 @@ class Discord:
                     server.start()
                     msg = "サーバーを起動します"
                 else:
-                     msg = "サーバーは起動しています"
+                    msg = "サーバーは起動しています"
                 await self.client.send_message(message.channel, msg)
 
             elif message.content.startswith('/mc stop'):
@@ -125,5 +125,6 @@ class Discord:
 def main():
     ds = Discord()
     ds.start()
+
 
 main()
