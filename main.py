@@ -1,5 +1,6 @@
 import configparser
 import subprocess
+import re
 from mcrcon import MCRcon
 
 class Config:
@@ -42,8 +43,14 @@ class Server:
         with MCRcon(self.host, self.password, self.port) as mcr:
             print(mcr.command("/stop"))
 
+    def count(self):
+        with MCRcon(self.host, self.password, self.port) as mcr:
+            res = mcr.command("/list")
+            count = int(re.search("([0-9]+)", res).group(0))
+            return(count)
+
 def main():
     server = Server()
-    server.stop()
+    print(server.count(), "人います")
 
 main()
