@@ -1,4 +1,5 @@
 import configparser
+import subprocess
 from mcrcon import MCRcon
 
 class Config:
@@ -30,22 +31,25 @@ class Config:
         return config[section][key]
 
 
-class Minecraft:
+class Server:
     def __init__(self):
         conf = Config()
         self.host = conf.load("Minecraft", "host")
         self.password = conf.load("Minecraft", "password")
         self.port = int(conf.load("Minecraft", "port"))
+        self.gce_zone = conf.load("GCE", "gce_zone")
+        self.gce_name = conf.load("GCE", "gce_name")
+        self.gcloud = conf.load("GCE", "gcloud")
 
     def start(self):
-        return 0
+        subprocess.run([self.gcloud, "compute", "instances", "start", "--zone", self.gce_zone, self.gce_name])
 
     def stop(self):
         with MCRcon(self.host, self.password, self.port) as mcr:
             print(mcr.command("/stop"))
 
 def main():
-    mc = Minecraft()
-    mc.stop()
+    server = Server()
+    server.stop()
 
 main()
